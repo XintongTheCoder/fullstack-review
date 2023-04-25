@@ -14,7 +14,7 @@ const RepoList = ({ repos }) => (
               <div>description: {repo.description}</div>
               <div>owner: {repo.owner}</div>
               <div>owner_url: {repo.owner_url}</div>
-              <div>private: {repo.private}</div>
+              <div>private: {repo.private.toString()}</div>
               <div>created_at: {repo.created_at}</div>
               <div>updated_at: {repo.updated_at}</div>
               <div>size: {repo.size}</div>

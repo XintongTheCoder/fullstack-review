@@ -43,13 +43,6 @@ const save = (repos) => {
 
       const repoModel = new Repo(filteredRepo);
       return repoModel.save();
-      // repoModel.save((err, repoModel) => {
-      //   if (err) {
-      //     throw Error('Failed to save repo', filteredRepo.name, ':', err);
-      //   } else {
-      //     console.log('Successfully saved repo', filteredRepo.name);
-      //   }
-      // });
     })
   );
 };
