@@ -1,24 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import $ from 'jquery';
 import Search from './components/Search.jsx';
 import RepoList from './components/RepoList.jsx';
 
 const App = () => {
-
+  const serverUrl = 'http://127.0.0.1:1128/repos';
   const [repos, setRepos] = useState([]);
+  const fetchRepos = (successCB, errorCB = null) => {
+    $.ajax({
+      url: serverUrl,
+      type: 'GET',
+      contentType: 'application/json',
+      success: (data) => {
+        successCB(data);
+      },
+      error:
+        errorCB ||
+        ((error) => {
+          console.error('Failed to fetch repos', error);
+        }),
+    });
+  };
 
-  const search = (term) => {
+  useEffect(() => {
+    fetchRepos(setRepos);
+  }, []);
+
+  const search = (term, successCB = setRepos, errorCB = null) => {
+    $.ajax({
+      url: serverUrl,
+      type: 'POST',
+      data: JSON.stringify({ username: term }),
+      contentType: 'application/json',
+      success: (data) => {
+        successCB(data);
+      },
+      error:
+        errorCB ||
+        ((error) => {
+          console.error('Failed to search username', term, error);
+        }),
+    });
     console.log(`${term} was searched`);
-  }
+  };
 
   return (
     <div>
       <h1>Github Fetcher</h1>
-      <RepoList repos={repos}/>
-      <Search onSearch={search}/>
+      <Search onSearch={search} />
+      <RepoList repos={repos} />
     </div>
   );
-}
+};
 
 ReactDOM.render(<App />, document.getElementById('app'));
