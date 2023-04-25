@@ -18,8 +18,13 @@ app.post('/repos', (req, res) => {
   // save the repo information in the database
   getReposByUsername(req.body.username)
     .then((res) => db.save(res.data))
-    .then((value) => db.findTop25())
-    .then((repos) => res.status(201).json(repos))
+    .then((summary) => {
+      return {
+        ...summary,
+        repos: db.findTop25(),
+      };
+    })
+    .then((resp) => res.status(201).json(resp))
     .catch((err) => {
       res.sendStatus(404);
     });

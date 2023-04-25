@@ -24,6 +24,8 @@ let Repo = mongoose.model('Repo', repoSchema);
 
 // Save a repo or repos to MongoDB
 const save = (repos) => {
+  let newRepoCount = 0;
+  let updatedRepoCount = 0;
   return Promise.all(
     repos.map((repo) => {
       const filteredRepo = {
@@ -42,9 +44,39 @@ const save = (repos) => {
       };
 
       const repoModel = new Repo(filteredRepo);
-      return repoModel.save();
+      return (
+        Repo.findById(repo.id)
+          .exec()
+          // New repo
+          .catch((err) => {
+            return repoModel.save().then(() => {
+              return true;
+            });
+          })
+          // Existing Repo
+          .then(() => {
+            return repoModel.update().then((result) => {
+              return result.nModified;
+            });
+          })
+      );
     })
-  );
+  ).then((results) => {
+    // TODO
+    let updatedCounter = 0;
+    let newCounter = 0;
+    for (let i = 0; i < results.length; i++) {
+      if (results[i]) {
+        newCounter++;
+      } else {
+        updatedCounter++;
+      }
+    }
+    return {
+      updatedCounter,
+      newCounter,
+    };
+  });
 };
 
 const findTop25 = () => {
