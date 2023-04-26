@@ -40,7 +40,9 @@ const App = () => {
       data: JSON.stringify({ username: term }),
       contentType: 'application/json',
       success: (data) => {
-        successCB(data);
+        const msg = `${data.newCounter} new repos imported, ${data.updatedCounter} repos updated`;
+        popup(msg);
+        successCB(data.repos);
       },
       error:
         errorCB ||

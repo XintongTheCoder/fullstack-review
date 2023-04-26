@@ -24,60 +24,61 @@ let Repo = mongoose.model('Repo', repoSchema);
 
 // Save a repo or repos to MongoDB
 const save = (repos) => {
-  let newRepoCount = 0;
-  let updatedRepoCount = 0;
-  return Promise.all(
-    repos.map((repo) => {
-      const filteredRepo = {
-        repo_id: repo.id,
-        name: repo.name,
-        repo_url: repo.html_url,
-        description: repo.description,
-        owner: repo.owner.login,
-        owner_url: repo.owner.html_url,
-        private: repo.private,
-        created_at: moment(repo.created_at).format('YYYY-MM-DD'),
-        updated_at: moment(repo.updated_at).format('YYYY-MM-DD'),
-        size: repo.size,
-        watchers: repo.watchers,
-        forks: repo.forks,
-      };
-
-      const repoModel = new Repo(filteredRepo);
-      return (
-        Repo.findById(repo.id)
-          .exec()
-          // New repo
-          .catch((err) => {
-            return repoModel.save().then(() => {
-              return true;
-            });
-          })
-          // Existing Repo
-          .then(() => {
-            return repoModel.update().then((result) => {
-              return result.nModified;
-            });
-          })
-      );
-    })
-  ).then((results) => {
-    // TODO
+  return Promise.all(repos.map((repo) => updateDB(repo))).then((results) => {
     let updatedCounter = 0;
     let newCounter = 0;
     for (let i = 0; i < results.length; i++) {
-      if (results[i]) {
+      if (results[i] === 1) {
         newCounter++;
-      } else {
+      } else if (results[i] === 2) {
         updatedCounter++;
       }
     }
     return {
-      updatedCounter,
       newCounter,
+      updatedCounter,
     };
   });
 };
+
+function updateDB(repo) {
+  const repoModel = new Repo({
+    repo_id: repo.id,
+    name: repo.name,
+    repo_url: repo.html_url,
+    description: repo.description,
+    owner: repo.owner.login,
+    owner_url: repo.owner.html_url,
+    private: repo.private,
+    created_at: moment(repo.created_at).format('YYYY-MM-DD'),
+    updated_at: moment(repo.updated_at).format('YYYY-MM-DD'),
+    size: repo.size,
+    watchers: repo.watchers,
+    forks: repo.forks,
+  });
+  return (
+    Repo.findOne({ repo_id: repo.id })
+      .exec()
+      // Existing Repo, if got updated, return 2
+      .then((queryResult) => {
+        if (!queryResult) {
+          // New repo, return 1
+          return repoModel.save().then(() => 1);
+        }
+        return repoModel
+          .update(
+            { repo_id: repo.id },
+            {
+              $set: (data) => {
+                const { repo_id, ...result } = data;
+                return result;
+              },
+            }
+          )
+          .then((result) => (result.modifiedCount === 1 ? 2 : 0));
+      })
+  );
+}
 
 const findTop25 = () => {
   return Repo.find({}).sort({ size: -1 }).limit(25).exec();
